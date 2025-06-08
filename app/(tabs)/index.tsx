@@ -1,75 +1,202 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { FontAwesome } from "@expo/vector-icons";
+import { router, Stack, useFocusEffect, useNavigation } from "expo-router";
+import { useSQLiteContext } from "expo-sqlite";
+import { useCallback, useLayoutEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+type UserType = { id: number; name: string; email: string };
 
-export default function HomeScreen() {
+export default function TabHome() {
+  const [data, setData] = useState<UserType[]>([]);
+  const database = useSQLiteContext();
+  const loadData = async () => {
+    const result = await database.getAllAsync<UserType>("SELECT * FROM users;");
+    setData(result); // yoki agar kerak bo‘lsa: setData(result.rows)
+  };
+  const navigation = useNavigation();
+  const { t, i18n } = useTranslation();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: t("Home"),
+      headerRight,
+    });
+  }, [t, i18n.language]);
+
+  // useEffect(() => {
+  //   loadData();
+  // }, []); faqat birinchi marta ishlaydi
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  ); //xar safar ishlaydi
+
+  const handleDeleteSql = async (id: number) => {
+    try {
+      await database.runAsync("DELETE FROM users WHERE id = ?;", [id]);
+      loadData(); // Ro'yxatni yangilash
+    } catch (error) {
+      console.error("Foydalanuvchini oʻchirishda xatolik yuz berdi:", error);
+    }
+  };
+  const handleDelete = (id: number) => {
+    Alert.alert(
+      "O`chirishni tasdiqlang",
+      "Haqiqatan ham bu foydalanuvchini o`chirib tashlamoqchimisiz?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleDeleteSql(id),
+        },
+      ]
+    );
+  };
+
+  const headerRight = () => {
+    //button bosilganda modal txs oynasiga o'tish
+    return (
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          gap: 5,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.push("/modal")}
+          style={{ marginRight: 10, cursor: "pointer" }}
+        >
+          <FontAwesome name="plus-circle" size={28} color="blue" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => router.push("/modalTwo")}
+          style={{ marginRight: 10 }}
+        >
+          <FontAwesome name="user" size={28} color="green" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => router.push("/modalCaptcha")}
+          style={{ marginRight: 10 }}
+        >
+          <FontAwesome name="book" size={28} color="red" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View style={styles.container}>
+      <Stack.Screen
+        key={i18n.language} // <-- bu orqali har til o‘zgarganda header yangilanadi
+        options={{
+          title: t("Home"),
+          headerRight,
+        }}
+      />
+
+      <View>
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => {
+            return (
+              <View style={styles.itemContainer}>
+                <View style={styles.userInfo}>
+                  <Text style={styles.nameText}>{item.name}</Text>
+                  <Text style={styles.emailText}>{item.email}</Text>
+                </View>
+
+                <View
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    gap: 5,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      router.push(`/modal?id=${item.id}`);
+                    }}
+                    style={styles.button}
+                  >
+                    <Text style={styles.buttonText}>{t("Update")}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      handleDelete(item.id);
+                    }}
+                    style={styles.buttonDel}
+                  >
+                    <Text style={styles.buttonText}>{t("Delete")}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    padding: 8,
   },
-  stepContainer: {
-    gap: 8,
+  itemContainer: {
+    paddingVertical: 5,
+    paddingHorizontal: 7,
     marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  userInfo: {
+    flexDirection: "column",
+  },
+  nameText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  emailText: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
+  },
+  button: {
+    backgroundColor: "blue",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 5,
+  },
+  buttonDel: {
+    backgroundColor: "red",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
