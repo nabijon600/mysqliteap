@@ -33,7 +33,7 @@ export default function RootLayout() {
         <Stack.Screen name="modalthree" options={{presentation: "modal"}} />
         <Stack.Screen name="modaltwo" options={{presentation: "modal"}} />
       </Stack>
-
+      
       <StatusBar style="auto" />
     </ThemeProvider>
     </SQLiteProvider>
