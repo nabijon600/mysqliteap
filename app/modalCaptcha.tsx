@@ -126,7 +126,7 @@ export default function ModalCaptcha() {
           <Picker.Item label="ФСС" value="ED-POT-RES-025" />
           <Picker.Item
             label="Разрешение на ввоз в РУз продукции, содержащей ОРВ"
-            value="ED-POT-RES-003"
+            value="ED-POT-RES-003" 
           />
           <Picker.Item
             label="Разрешение на вывоз из РУз продукции, содержащей ОРВ"

@@ -16,7 +16,7 @@ import "./i18n/index";
 type Props = {
   title: string;
 };
-const colorScheme = useColorScheme(); // 'light' yoki 'dark'
+const colorScheme = useColorScheme(); // 'light' yoki 'dark' 08062025
 
 export default function Modaltwo({ title }: Props) {
   const { t } = useTranslation();
